@@ -12,7 +12,16 @@
   "keywords": [
     "expressjs"
   ],
-  "author": "Meldodi Samuel Siantur",
+  "author": {
+    "name": "Meldodi Samuel Siantur",
+    "url": "https://github.com/samuelsntr"
+  },
+  "contributors": [
+    {
+      "name": "Wildan Luqmanul Hakim",
+      "url": "https://github.com/wildanlh"
+    }
+  ],
   "license": "ISC",
   "dependencies": {
     "cors": "^2.8.5",
