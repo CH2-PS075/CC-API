@@ -15,7 +15,7 @@ const User = dbConnection.define(
   },
   {
     freezeTableName: true,
-  }
+  },
 );
 
 module.exports = User;
