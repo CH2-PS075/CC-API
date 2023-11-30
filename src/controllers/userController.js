@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const User = require('../models/userModel');
 
+// CREATE NEW USER
 const createUser = async (req, res) => {
   try {
     const hashedPassword = await bcrypt.hash(req.body.password, 10);
@@ -20,6 +21,17 @@ const createUser = async (req, res) => {
   }
 };
 
+// GET ALL REGISTERED USER
+const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.findAll();
+    res.status(200).json(users);
+  } catch (error) {
+    res.status(500).json({ error: 'cannot fetch the users' });
+  }
+};
+
 module.exports = {
   createUser,
+  getAllUsers,
 };
