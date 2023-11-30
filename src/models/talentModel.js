@@ -34,6 +34,10 @@ const Talent = dbConnection.define('Talent', {
   paymentConfirmationReceipt: {
     type: DataTypes.STRING, // Similar to identityCard, store file paths or references
   },
+  // initial value false verified
+  // picture talent default value / picture
 });
 
 module.exports = Talent;
+
+// portofolio link drive
