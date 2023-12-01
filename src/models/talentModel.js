@@ -85,3 +85,4 @@ module.exports = Talent;
 
 (async () => {
   await dbConnection.sync();
+})();
