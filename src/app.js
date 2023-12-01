@@ -1,16 +1,13 @@
 const express = require('express');
 const cors = require('cors');
 const config = require('./config/config');
-const userRouter = require('./routes/userRoute');
-const authRouter = require('./routes/authRoute');
+const router = require('./routes/index');
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
-
-app.use(userRouter);
-app.use('/auth', authRouter);
+app.use(router);
 app.get('/', (req, res) => {
   res.send('Hello World!');
 });
