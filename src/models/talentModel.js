@@ -1,43 +1,87 @@
-// models/talentModel.js
 const { Sequelize } = require('sequelize');
 const dbConnection = require('../config/database');
 
 const { DataTypes } = Sequelize;
 
-const Talent = dbConnection.define('Talent', {
-  talentName: {
-    type: DataTypes.STRING,
-    allowNull: false,
+const Talent = dbConnection.define(
+  'tb_talent',
+  {
+    talentId: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
+    },
+    talentName: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    quantity: {
+      type: DataTypes.ENUM('single', 'duo', 'group'),
+      allowNull: false,
+    },
+    category: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    address: {
+      type: DataTypes.STRING,
+    },
+    contact: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    price: {
+      type: DataTypes.FLOAT,
+      allowNull: false,
+    },
+    identityCard: {
+      type: DataTypes.STRING,
+    },
+    paymentConfirmationReceipt: {
+      type: DataTypes.STRING,
+    },
+    email: {
+      type: DataTypes.STRING,
+      unique: true,
+      validate: {
+        isEmail: true,
+      },
+    },
+    password: {
+      type: DataTypes.STRING,
+    },
+    isVerified: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: 0,
+    },
+    picture: {
+      type: DataTypes.STRING,
+      defaultValue: '.png',
+    },
+    portfolio: {
+      type: DataTypes.STRING,
+    },
+    latitude: {
+      type: DataTypes.INTEGER,
+      validate: {
+        min: -90,
+        max: 90,
+      },
+    },
+    longitude: {
+      type: DataTypes.INTEGER,
+      validate: {
+        min: -180,
+        max: 180,
+      },
+    },
   },
-  quantity: {
-    type: DataTypes.ENUM('single', 'duo', 'group'),
-    allowNull: false,
+  {
+    freezeTableName: true,
   },
-  category: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-  address: {
-    type: DataTypes.STRING,
-  },
-  contact: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-  price: {
-    type: DataTypes.FLOAT,
-    allowNull: false,
-  },
-  identityCard: {
-    type: DataTypes.STRING, // You can use a data type suitable for storing file paths or references
-  },
-  paymentConfirmationReceipt: {
-    type: DataTypes.STRING, // Similar to identityCard, store file paths or references
-  },
-  // initial value false verified
-  // picture talent default value / picture
-});
+);
 
 module.exports = Talent;
 
-// portofolio link drive
+(async () => {
+  await dbConnection.sync();

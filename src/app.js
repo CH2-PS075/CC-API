@@ -9,13 +9,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// USER ROUTES
-app.use('/users', userRouter);
-
-// AUTHTENTICATION ROUTES
+app.use(userRouter);
 app.use('/auth', authRouter);
-
-// INITIAL ENDPOINT
 app.get('/', (req, res) => {
   res.send('Hello World!');
 });

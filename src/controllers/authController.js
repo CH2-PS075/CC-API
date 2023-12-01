@@ -21,7 +21,7 @@ const loginUser = async (req, res) => {
     }
 
     // IF SUCCES GENERATE JWT TOKEN
-    const token = jwt.sign({ userId: user.id }, config.accessTokenSecret, { expiresIn: '1h' });
+    const token = jwt.sign({ userId: user.id }, config.accessTokenSecret, { expiresIn: '1d' });
     const message = 'Login successful';
 
     return res.status(200).json({ token, message });
