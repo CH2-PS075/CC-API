@@ -4,18 +4,45 @@ const dbConnection = require('../config/database');
 const { DataTypes } = Sequelize;
 
 const User = dbConnection.define(
-  'users',
+  'tb_users',
   {
-    nama_lengkap: DataTypes.STRING,
-    username: DataTypes.STRING,
-    alamat: DataTypes.STRING,
-    telpon: DataTypes.STRING,
-    email: DataTypes.STRING,
-    password: DataTypes.STRING,
+    userId: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
+    },
+    username: {
+      type: DataTypes.STRING,
+      unique: true,
+      allowNull: false,
+    },
+    fullName: {
+      type: DataTypes.STRING,
+    },
+    address: {
+      type: DataTypes.TEXT,
+    },
+    contact: {
+      type: DataTypes.STRING,
+    },
+    email: {
+      type: DataTypes.STRING,
+      unique: true,
+      validate: {
+        isEmail: true,
+      },
+    },
+    password: {
+      type: DataTypes.STRING,
+    },
+    // role: {
+    //   type: DataTypes.BOOLEAN,
+    //   defaultValue: 0,
+    // },
   },
   {
     freezeTableName: true,
-  }
+  },
 );
 
 module.exports = User;
