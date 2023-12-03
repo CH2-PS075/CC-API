@@ -35,10 +35,10 @@ const User = dbConnection.define(
     password: {
       type: DataTypes.STRING,
     },
-    // role: {
-    //   type: DataTypes.BOOLEAN,
-    //   defaultValue: 0,
-    // },
+    picture: {
+      type: DataTypes.STRING,
+      defaultValue: '.png',
+    },
   },
   {
     freezeTableName: true,
