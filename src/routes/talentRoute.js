@@ -6,7 +6,7 @@ const {
     updateTalentById,
     deleteTalentById,
 } = require('../controllers/talentController');
-const { authenticateToken } = require('../middleware/authMiddleware');
+const { authenticateToken } = require('../middlewares/authMiddleware');
 
 const router = express.Router();
 

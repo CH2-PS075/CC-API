@@ -1,5 +1,6 @@
 const express = require('express');
 const { verifyTalent } = require('../controllers/adminController');
+// const { isAdmin } = require('../middlewares/adminMiddleware');
 
 const router = express.Router();
 
