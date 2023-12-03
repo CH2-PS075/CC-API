@@ -3,6 +3,11 @@ const Talent = require('../models/talentModel');
 
 const addTalent = async (req, res) => {
     try {
+        const existingTalent = await Talent.findOne({ where: { email: req.body.email } });
+        if (existingTalent) {
+            return res.status(409).json({ message: 'Email already in use' });
+        }
+
         const { password, ...otherDetails } = req.body;
         const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -12,9 +17,9 @@ const addTalent = async (req, res) => {
             isVerified: 0,
         });
 
-        res.status(201).json({ message: 'Talent registered successfully', talentId: newTalent.talentId });
+        return res.status(201).json({ message: 'Talent registered successfully', talentId: newTalent.talentId });
     } catch (error) {
-        res.status(400).json({ error: 'Registration failed', details: error.message });
+        return res.status(400).json({ error: 'Registration failed', details: error.message });
     }
 };
 

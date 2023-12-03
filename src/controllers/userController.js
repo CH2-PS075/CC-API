@@ -1,9 +1,16 @@
 const bcrypt = require('bcrypt');
 const User = require('../models/userModel');
+const upload = require('../middlewares/uploadFileMiddleware');
 
 // CREATE NEW USER
 const addUser = async (req, res) => {
   try {
+    const existingUser = await User.findOne({ where: { email: req.body.email } });
+
+    if (existingUser) {
+      return res.status(409).send({ message: 'Email already in use' });
+    }
+
     const hashedPassword = await bcrypt.hash(req.body.password, 10);
 
     const newUser = {
@@ -14,10 +21,11 @@ const addUser = async (req, res) => {
       email: req.body.email,
       password: hashedPassword,
     };
+
     await User.create(newUser);
-    res.status(201).send({ message: 'User registered successfully' });
+    return res.status(201).send({ message: 'User registered successfully' });
   } catch (error) {
-    res.status(400).send(error);
+    return res.status(400).send({ error: 'Registration failed', details: error.message });
   }
 };
 
@@ -77,10 +85,40 @@ const deleteUserById = async (req, res) => {
   }
 };
 
+const userUploadPicture = async (req, res) => {
+  // eslint-disable-next-line consistent-return
+  upload(req, res, async (err) => {
+    if (err) {
+      return res.status(400).json({ error: err, details: err.message });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    try {
+      const user = await User.findByPk(req.params.id);
+
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      // Update user's picture
+      user.picture = req.file.path;
+      await user.save();
+
+      res.status(200).json({ message: 'Picture uploaded successfully', picture: req.file.path });
+    } catch (error) {
+      res.status(500).json({ error: 'Internal server error', details: error.message });
+    }
+  });
+};
+
 module.exports = {
   addUser,
   getAllUsers,
   getUserById,
   updateUserById,
   deleteUserById,
+  userUploadPicture,
 };
