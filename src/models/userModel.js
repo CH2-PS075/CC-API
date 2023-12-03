@@ -37,7 +37,7 @@ const User = dbConnection.define(
     },
     picture: {
       type: DataTypes.STRING,
-      defaultValue: '.png',
+      defaultValue: 'public/assets/default-profile.jpg',
     },
   },
   {
