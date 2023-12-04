@@ -1,5 +1,6 @@
 const bcrypt = require('bcrypt');
 const Talent = require('../models/talentModel');
+const User = require('../models/userModel');
 
 const addTalent = async (req, res) => {
     try {
@@ -81,10 +82,29 @@ const deleteTalentById = async (req, res) => {
     }
 };
 
+const addTalentToFavorites = async (req, res) => {
+    const { userId, talentId } = req.params;
+
+    try {
+      const user = await User.findByPk(userId);
+      const talent = await Talent.findByPk(talentId);
+
+      if (!user || !talent) {
+        res.status(404).json({ message: 'User or Talent not found' });
+      }
+
+      await user.addFavoriteTalent(talent);
+      res.status(200).json({ message: 'Talent added to favorites' });
+    } catch (error) {
+      res.status(500).json({ error: 'Unable to add talent to favorites' });
+    }
+  };
+
 module.exports = {
     addTalent,
     getAllTalents,
     getTalentById,
     updateTalentById,
     deleteTalentById,
+    addTalentToFavorites,
 };
