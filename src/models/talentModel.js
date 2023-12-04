@@ -1,6 +1,6 @@
 const { Sequelize } = require('sequelize');
 const dbConnection = require('../config/database');
-const User = require('./userModel');
+// const User = require('./userModel');
 
 const { DataTypes } = Sequelize;
 
@@ -82,7 +82,7 @@ const Talent = dbConnection.define(
   },
 );
 
-Talent.belongsToMany(User, { through: 'UserFavoriteTalent', as: 'favoritedBy' });
+// Talent.belongsToMany(User, { through: 'UserFavoriteTalent', as: 'favoritedBy' });
 
 module.exports = Talent;
 
