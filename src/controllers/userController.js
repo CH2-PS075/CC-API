@@ -114,6 +114,20 @@ const userUploadPicture = async (req, res) => {
   });
 };
 
+const getFavoriteTalentsForUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Use the userId to fetch the user's favored talents from your database
+    // Assuming you have a function in your database model to retrieve favored talents for a user
+    const favoredTalents = await User.findFavoriteTalents(userId);
+
+    res.status(200).json(favoredTalents);
+  } catch (error) {
+    res.status(500).json({ error: 'Error fetching favored talents', details: error.message });
+  }
+};
+
 module.exports = {
   addUser,
   getAllUsers,
@@ -121,4 +135,5 @@ module.exports = {
   updateUserById,
   deleteUserById,
   userUploadPicture,
+  getFavoriteTalentsForUser,
 };
