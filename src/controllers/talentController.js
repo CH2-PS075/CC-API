@@ -1,4 +1,5 @@
 const bcrypt = require('bcrypt');
+const { Op } = require('sequelize');
 const Talent = require('../models/talentModel');
 const User = require('../models/userModel');
 
@@ -100,6 +101,38 @@ const addTalentToFavorites = async (req, res) => {
     }
   };
 
+const searchTalentByName = async (req, res) => {
+    try {
+        const { name } = req.query;
+        const talents = await Talent.findAll({
+            where: {
+                talentName: {
+                    [Op.iLike]: `%${name}%`, // Case-insensitive search for talent name
+                },
+            },
+        });
+        res.status(200).json(talents);
+    } catch (error) {
+        res.status(500).json({ error: 'Error searching talents by name', details: error.message });
+    }
+};
+
+const searchTalentByCategory = async (req, res) => {
+    try {
+        const { category } = req.query;
+        const talents = await Talent.findAll({
+            where: {
+                category: {
+                    [Op.iLike]: `%${category}%`, // Case-insensitive search for category
+                },
+            },
+        });
+        res.status(200).json(talents);
+    } catch (error) {
+        res.status(500).json({ error: 'Error searching talents by category', details: error.message });
+    }
+};
+
 module.exports = {
     addTalent,
     getAllTalents,
@@ -107,4 +140,6 @@ module.exports = {
     updateTalentById,
     deleteTalentById,
     addTalentToFavorites,
+    searchTalentByName,
+    searchTalentByCategory,
 };
