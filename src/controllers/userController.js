@@ -1,6 +1,5 @@
 const bcrypt = require('bcrypt');
 const User = require('../models/userModel');
-const upload = require('../middlewares/uploadFileMiddleware');
 
 // CREATE NEW USER
 const addUser = async (req, res) => {
@@ -12,6 +11,7 @@ const addUser = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(req.body.password, 10);
+    const pictureUrl = req.body.picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(req.body.fullName)}`;
 
     const newUser = {
       username: req.body.username,
@@ -20,6 +20,7 @@ const addUser = async (req, res) => {
       contact: req.body.contact,
       email: req.body.email,
       password: hashedPassword,
+      picture: pictureUrl,
     };
 
     await User.create(newUser);
@@ -85,35 +86,6 @@ const deleteUserById = async (req, res) => {
   }
 };
 
-const userUploadPicture = async (req, res) => {
-  // eslint-disable-next-line consistent-return
-  upload(req, res, async (err) => {
-    if (err) {
-      return res.status(400).json({ error: err, details: err.message });
-    }
-
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
-    }
-
-    try {
-      const user = await User.findByPk(req.params.id);
-
-      if (!user) {
-        return res.status(404).json({ error: 'User not found' });
-      }
-
-      // Update user's picture
-      user.picture = req.file.path;
-      await user.save();
-
-      res.status(200).json({ message: 'Picture uploaded successfully', picture: req.file.path });
-    } catch (error) {
-      res.status(500).json({ error: 'Internal server error', details: error.message });
-    }
-  });
-};
-
 const getFavoriteTalentsForUser = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -134,6 +106,5 @@ module.exports = {
   getUserById,
   updateUserById,
   deleteUserById,
-  userUploadPicture,
   getFavoriteTalentsForUser,
 };
