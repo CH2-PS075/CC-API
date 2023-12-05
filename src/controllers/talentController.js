@@ -2,27 +2,57 @@ const bcrypt = require('bcrypt');
 const { Op } = require('sequelize');
 const Talent = require('../models/talentModel');
 const User = require('../models/userModel');
+const { storage, bucketName } = require('../config/cloudStorage');
+const uploadPicture = require('../utils/uploadPicture');
+
+const bucket = storage.bucket(bucketName);
 
 const addTalent = async (req, res) => {
-    try {
-        const existingTalent = await Talent.findOne({ where: { email: req.body.email } });
-        if (existingTalent) {
-            return res.status(409).json({ message: 'Email already in use' });
+    uploadPicture.single('identityCard')(req, res, async (err) => {
+        if (err) {
+            return res.status(400).json({ error: err, details: err.message });
         }
 
-        const { password, ...otherDetails } = req.body;
-        const hashedPassword = await bcrypt.hash(password, 10);
+        try {
+            const existingTalent = await Talent.findOne({ where: { email: req.body.email } });
+            if (existingTalent) {
+                return res.status(409).json({ message: 'Email already in use' });
+            }
 
-        const newTalent = await Talent.create({
-            ...otherDetails,
-            password: hashedPassword,
-            isVerified: 0,
-        });
+            const { password, ...otherDetails } = req.body;
+            const hashedPassword = await bcrypt.hash(password, 10);
+            const formattedTalentName = req.body.talentName.replace(/\s+/g, '_');
 
-        return res.status(201).json({ message: 'Talent registered successfully', talentId: newTalent.talentId });
-    } catch (error) {
-        return res.status(400).json({ error: 'Registration failed', details: error.message });
-    }
+            let identityCardUrl = req.body.identityCard;
+            if (req.file) {
+                const blob = bucket.file(`uploads/${formattedTalentName}/identityCard-${Date.now()}-${req.file.originalname}`);
+                const blobStream = blob.createWriteStream({
+                    metadata: { contentType: req.file.mimetype },
+                });
+
+                blobStream.end(req.file.buffer);
+                await new Promise((resolve, reject) => {
+                    blobStream.on('error', reject);
+                    blobStream.on('finish', resolve);
+                });
+
+                await blob.makePublic();
+                identityCardUrl = `https://storage.googleapis.com/${bucketName}/${blob.name}`;
+            }
+
+            const newTalent = await Talent.create({
+                ...otherDetails,
+                password: hashedPassword,
+                isVerified: 0,
+                picture: req.body.picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(req.body.fullName)}`,
+                identityCard: identityCardUrl,
+            });
+
+            return res.status(201).json({ message: 'Talent registered successfully', talentId: newTalent.talentId });
+        } catch (error) {
+            return res.status(400).json({ error: 'Registration failed', details: error.message });
+        }
+    });
 };
 
 const getAllTalents = async (req, res) => {
@@ -87,19 +117,19 @@ const addTalentToFavorites = async (req, res) => {
     const { userId, talentId } = req.params;
 
     try {
-      const user = await User.findByPk(userId);
-      const talent = await Talent.findByPk(talentId);
+        const user = await User.findByPk(userId);
+        const talent = await Talent.findByPk(talentId);
 
-      if (!user || !talent) {
-        res.status(404).json({ message: 'User or Talent not found' });
-      }
+        if (!user || !talent) {
+            res.status(404).json({ message: 'User or Talent not found' });
+        }
 
-      await user.addFavoriteTalent(talent);
-      res.status(200).json({ message: 'Talent added to favorites' });
+        await user.addFavoriteTalent(talent);
+        res.status(200).json({ message: 'Talent added to favorites' });
     } catch (error) {
-      res.status(500).json({ error: 'Unable to add talent to favorites' });
+        res.status(500).json({ error: 'Unable to add talent to favorites' });
     }
-  };
+};
 
 const searchTalentByName = async (req, res) => {
     try {
