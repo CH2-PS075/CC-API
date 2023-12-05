@@ -41,11 +41,11 @@ const detailCategory = dbConnection.define(
 );
 
 detailCategory.belongsTo(Category, {
-    foreignKey: 'id_kategori',
+    foreignKey: 'categoryId',
     as: 'category',
 });
 Category.hasOne(detailCategory, {
-    foreignKey: 'id_kategori',
+    foreignKey: 'categoryId',
     as: 'detailCategory',
 });
 
