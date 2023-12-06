@@ -26,7 +26,9 @@ const loginUser = async (req, res) => {
     const token = jwt.sign({ userId: user.id }, config.accessTokenSecret, { expiresIn: '1d' });
     const message = 'Login successful';
 
-    return res.status(200).json({ token, message });
+    return res.status(200).json({
+      token, message, username: user.username, contact: user.contact, address: user.address,
+    });
   } catch (error) {
     return res.status(500).json({ error: 'Login failed' });
   }
