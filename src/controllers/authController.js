@@ -2,6 +2,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const Admin = require('../models/adminModel');
 const User = require('../models/userModel');
+const Talent = require('../models/talentModel');
 const config = require('../config/config');
 
 // LOGIN USER
@@ -58,7 +59,35 @@ const loginAdmin = async (req, res) => {
   }
 };
 
+// LOGIN TALENT
+const loginTalent = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const talent = await Talent.findOne({ where: { email } });
+
+    if (!talent) {
+      return res.status(404).json({ message: 'Talent not found' });
+    }
+
+    const isMatch = await bcrypt.compare(password, talent.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    const token = jwt.sign(
+      { talentId: talent.talentId },
+      config.accessTokenSecret,
+      { expiresIn: '1d' },
+    );
+
+    return res.json({ token, message: 'Login successful' });
+  } catch (error) {
+    return res.status(500).json({ message: 'Login failed', error: error.message });
+  }
+};
+
 module.exports = {
   loginUser,
   loginAdmin,
+  loginTalent,
 };
