@@ -1,6 +1,6 @@
 const { Sequelize } = require('sequelize');
 const dbConnection = require('../config/database');
-// const User = require('./userModel');
+const { Category } = require('./categoryModel');
 
 const { DataTypes } = Sequelize;
 
@@ -12,16 +12,19 @@ const Talent = dbConnection.define(
       autoIncrement: true,
       primaryKey: true,
     },
+    categoryId: {
+      type: DataTypes.INTEGER,
+      references: {
+        model: 'tb_categories',
+        key: 'categoryId',
+      },
+    },
     talentName: {
       type: DataTypes.STRING,
       allowNull: false,
     },
     quantity: {
       type: DataTypes.ENUM('single', 'duo', 'group'),
-      allowNull: false,
-    },
-    category: {
-      type: DataTypes.STRING,
       allowNull: false,
     },
     address: {
@@ -81,7 +84,16 @@ const Talent = dbConnection.define(
   },
 );
 
-// Talent.belongsToMany(User, { through: 'UserFavoriteTalent', as: 'favoritedBy' });
+Category.hasMany(Talent, {
+  foreignKey: 'categoryId',
+  as: 'talents',
+  onUpdate: 'SET NULL',
+  onDelete: 'SET NULL',
+});
+Talent.belongsTo(Category, {
+  foreignKey: 'categoryId',
+  as: 'category',
+});
 
 module.exports = Talent;
 

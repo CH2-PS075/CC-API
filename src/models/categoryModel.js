@@ -40,6 +40,7 @@ const detailCategory = dbConnection.define(
 Category.hasMany(detailCategory, {
     foreignKey: 'categoryId',
     as: 'detailCategory',
+    onUpdate: 'CASCADE',
     onDelete: 'CASCADE',
 });
 detailCategory.belongsTo(Category, {
