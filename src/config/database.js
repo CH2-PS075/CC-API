@@ -6,7 +6,7 @@ const dbConnection = new Sequelize(
   `${config.userDatabase}`,
   `${config.passDatabase}`,
   {
-    host: 'localhost',
+    host: `${config.databaseHost}`,
     dialect: 'mysql',
   },
 );
