@@ -3,8 +3,8 @@ const { loginUser, loginAdmin, loginTalent } = require('../controllers/authContr
 
 const router = express.Router();
 
-router.post('/user/login', loginUser);
+router.post('/users/login', loginUser);
 router.post('/admin/login', loginAdmin);
-router.post('/talent/login', loginTalent);
+router.post('/talents/login', loginTalent);
 
 module.exports = router;

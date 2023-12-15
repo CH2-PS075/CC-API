@@ -1,22 +1,22 @@
 const { Sequelize } = require('sequelize');
 const dbConnection = require('../config/database');
-const { Category } = require('./categoryModel');
+const { detailCategory } = require('./categoryModel');
 
 const { DataTypes } = Sequelize;
 
 const Talent = dbConnection.define(
-  'tb_talent',
+  'tb_talents',
   {
     talentId: {
       type: DataTypes.INTEGER,
       autoIncrement: true,
       primaryKey: true,
     },
-    categoryId: {
+    detailCategoryId: {
       type: DataTypes.INTEGER,
       references: {
-        model: 'tb_categories',
-        key: 'categoryId',
+        model: 'tb_detail_categories',
+        key: 'detailCategoryId',
       },
     },
     talentName: {
@@ -28,7 +28,7 @@ const Talent = dbConnection.define(
       allowNull: false,
     },
     address: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
     },
     contact: {
       type: DataTypes.STRING,
@@ -62,17 +62,17 @@ const Talent = dbConnection.define(
       type: DataTypes.STRING,
     },
     portfolio: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
     },
     latitude: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.FLOAT,
       validate: {
         min: -90,
         max: 90,
       },
     },
     longitude: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.FLOAT,
       validate: {
         min: -180,
         max: 180,
@@ -84,15 +84,15 @@ const Talent = dbConnection.define(
   },
 );
 
-Category.hasMany(Talent, {
-  foreignKey: 'categoryId',
+detailCategory.hasMany(Talent, {
+  foreignKey: 'detailCategoryId',
   as: 'talents',
   onUpdate: 'SET NULL',
   onDelete: 'SET NULL',
 });
-Talent.belongsTo(Category, {
-  foreignKey: 'categoryId',
-  as: 'category',
+Talent.belongsTo(detailCategory, {
+  foreignKey: 'detailCategoryId',
+  as: 'detailCategory',
 });
 
 module.exports = Talent;

@@ -71,6 +71,11 @@ const loginTalent = async (req, res) => {
       return res.status(404).json({ message: 'Talent not found' });
     }
 
+    // Check if the talent account is verified
+    if (!talent.isVerified) {
+      return res.status(403).json({ message: 'Account is not verified. Wait admin to verify your account.' });
+    }
+
     const isMatch = await bcrypt.compare(password, talent.password);
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid credentials' });
@@ -82,7 +87,9 @@ const loginTalent = async (req, res) => {
       { expiresIn: '1d' },
     );
 
-    return res.json({ token, message: 'Login successful' });
+    return res.json({
+      token, message: 'Login successful', username: talent.username, contact: talent.contact, address: talent.address,
+    });
   } catch (error) {
     return res.status(500).json({ message: 'Login failed', error: error.message });
   }

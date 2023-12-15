@@ -8,7 +8,7 @@ const router = express.Router();
 
 router.use('/auth', authRoute);
 router.use('/admin', adminRoute);
-router.use('/talent', talentRoute);
+router.use('/talents', talentRoute);
 router.use('/users', userRoute);
 
 module.exports = router;
