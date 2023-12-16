@@ -1,6 +1,7 @@
 const Talent = require('../models/talentModel');
 const { Category, detailCategory } = require('../models/categoryModel'); // Update path as needed
 
+// Verification for talent
 const verifyTalent = async (req, res) => {
     try {
         const { talentId } = req.params;

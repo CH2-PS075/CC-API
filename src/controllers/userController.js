@@ -1,13 +1,24 @@
 const bcrypt = require('bcrypt');
 const User = require('../models/userModel');
+const Admin = require('../models/adminModel');
+const Talent = require('../models/talentModel');
 
 // CREATE NEW USER
 const addUser = async (req, res) => {
   try {
-    const existingUser = await User.findOne({ where: { email: req.body.email } });
+    const existingUserByEmail = await User.findOne({ where: { email: req.body.email } });
+    const existingAdminByEmail = await Admin.findOne({ where: { email: req.body.email } });
+    const existingTalentByEmail = await Talent.findOne({ where: { email: req.body.email } });
 
-    if (existingUser) {
+    if (existingUserByEmail || existingAdminByEmail || existingTalentByEmail) {
       return res.status(409).send({ message: 'Email already in use' });
+    }
+
+    const existingUserByUsername = await User.findOne({ where: { username: req.body.username } });
+    const existingAdminByUsername = await Admin.findOne({ where: { username: req.body.username } });
+
+    if (existingUserByUsername || existingAdminByUsername) {
+      return res.status(409).send({ message: 'Username already in use' });
     }
 
     const hashedPassword = await bcrypt.hash(req.body.password, 10);
@@ -55,18 +66,46 @@ const getUserById = async (req, res) => {
 };
 
 // UPDATE USER BY ID
+// eslint-disable-next-line consistent-return
 const updateUserById = async (req, res) => {
   try {
-    const updated = await User.update(req.body, {
-      where: { userId: req.params.id },
-    });
-    if (updated[0] > 0) {
-      res.status(200).send({ message: 'User updated successfully' });
-    } else {
-      res.status(404).send({ message: 'User not found' });
+    const userId = req.params.id;
+    const userToUpdate = await User.findByPk(userId);
+
+    const existingUserByEmail = await User.findOne({ where: { email: req.body.email } });
+    const existingAdminByEmail = await Admin.findOne({ where: { email: req.body.email } });
+    const existingTalentByEmail = await Talent.findOne({ where: { email: req.body.email } });
+
+    if (existingUserByEmail || existingAdminByEmail || existingTalentByEmail) {
+      return res.status(409).send({ message: 'Email already in use' });
     }
+
+    const existingUserByUsername = await User.findOne({ where: { username: req.body.username } });
+    const existingAdminByUsername = await Admin.findOne({ where: { username: req.body.username } });
+
+    if (existingUserByUsername || existingAdminByUsername) {
+      return res.status(409).send({ message: 'Username already in use' });
+    }
+
+    if (!userToUpdate) {
+      return res.status(404).send({ message: 'User not found' });
+    }
+
+    // Prepare updated data, excluding email and password
+    const updatedData = {
+      username: req.body.username || userToUpdate.username,
+      fullName: req.body.fullName || userToUpdate.fullName,
+      address: req.body.address || userToUpdate.address,
+      contact: req.body.contact || userToUpdate.contact,
+      picture: req.body.picture || userToUpdate.picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(userToUpdate.fullName)}`,
+    };
+
+    // Update the user with the new data
+    await userToUpdate.update(updatedData);
+
+    res.status(200).send({ message: 'User updated successfully' });
   } catch (error) {
-    res.status(500).send(error);
+    res.status(500).send({ error: 'Update failed', details: error.message });
   }
 };
 

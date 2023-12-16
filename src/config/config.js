@@ -7,7 +7,7 @@ const config = {
   databaseName: process.env.DATABASE_NAME,
   databaseHost: process.env.DATABASE_HOST,
   accessTokenSecret: process.env.ACCESS_TOKEN_SECRET,
-  projectIdGCP: process.env.PROJECT_ID_DCP,
+  projectIdGCP: process.env.PROJECT_ID_GCP,
   bucketName: process.env.BUCKET_NAME,
 };
 
