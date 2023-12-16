@@ -1,6 +1,5 @@
 const express = require('express');
 const cors = require('cors');
-
 const config = require('./config/config');
 const router = require('./routes/index');
 
