@@ -5,6 +5,7 @@ const User = require('../models/userModel');
 const { storage, bucketName } = require('../config/cloudStorage');
 const uploadPicture = require('../utils/uploadPicture');
 const { Category, detailCategory } = require('../models/categoryModel');
+const Admin = require('../models/adminModel');
 
 const bucket = storage.bucket(bucketName);
 
@@ -15,18 +16,33 @@ const addTalent = async (req, res) => {
         }
 
         try {
-            const existingTalent = await Talent.findOne({ where: { email: req.body.email } });
-            if (existingTalent) {
-                return res.status(409).json({ message: 'Email already in use' });
+            const existingUserByEmail = await User.findOne({
+                where: {
+                    email: req.body.email,
+                },
+            });
+            const existingAdminByEmail = await Admin.findOne({
+                where: {
+                    email: req.body.email,
+                },
+            });
+            const existingTalentByEmail = await Talent.findOne({
+                where: {
+                    email: req.body.email,
+                },
+            });
+
+            if (existingUserByEmail || existingAdminByEmail || existingTalentByEmail) {
+                return res.status(409).send({ message: 'Email already in use' });
             }
 
-            const { password, ...otherDetails } = req.body;
+            const { password } = req.body;
             const hashedPassword = await bcrypt.hash(password, 10);
             const formattedTalentName = req.body.talentName.replace(/\s+/g, '_');
 
             let identityCardUrl = req.body.identityCard;
             if (req.file) {
-                const blob = bucket.file(`uploads/${formattedTalentName}/identityCard-${Date.now()}-${req.file.originalname}`);
+                const blob = bucket.file(`uploads/${formattedTalentName}/identity/-${Date.now()}-${req.file.originalname}`);
                 const blobStream = blob.createWriteStream({
                     metadata: { contentType: req.file.mimetype },
                 });
@@ -42,11 +58,21 @@ const addTalent = async (req, res) => {
             }
 
             const newTalent = await Talent.create({
-                ...otherDetails,
+                detailCategoryId: req.body.detailCategoryId,
+                talentName: req.body.talentName,
+                quantity: req.body.quantity,
+                address: req.body.address,
+                contact: req.body.contact,
+                price: req.body.price,
+                email: req.body.email,
                 password: hashedPassword,
-                isVerified: 0,
-                picture: req.body.picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(req.body.fullName)}`,
+                isVerified: false,
+                picture: req.body.picture,
+                portfolio: req.body.portfolio,
+                latitude: req.body.latitude,
+                longitude: req.body.longitude,
                 identityCard: identityCardUrl,
+                paymentConfirmationReceipt: req.body.paymentConfirmationReceipt,
             });
 
             return res.status(201).json({ message: 'Talent registered successfully', talentId: newTalent.talentId });
@@ -111,16 +137,35 @@ const updateTalentById = async (req, res) => {
     // eslint-disable-next-line consistent-return
     uploadPicture.single('identityCard')(req, res, async (err) => {
         if (err) {
-            return res.status(400).json({ error: err, details: err.message });
+            return res.status(400).json({ error: err.message });
         }
 
         try {
-            const { id } = req.params;
-            const { password, talentName, ...otherDetails } = req.body;
+            const talentId = req.params.id;
+            const talentToUpdate = await Talent.findByPk(talentId);
 
-            let identityCardUrl;
+            const existingUser = await User.findOne({ where: { email: req.body.email } });
+            const existingAdmin = await Admin.findOne({ where: { email: req.body.email } });
+            const existingTalent = await Talent.findOne({ where: { email: req.body.email } });
+
+            if (existingUser || existingAdmin || existingTalent) {
+                return res.status(409).send({ message: 'Email already in use' });
+            }
+
+            if (!talentToUpdate) {
+                return res.status(404).json({ message: 'Talent not found' });
+            }
+
             if (req.file) {
-                const formattedTalentName = talentName.replace(/\s+/g, '_');
+                // Delete the old image from Google Cloud Storage
+                if (talentToUpdate.identityCard) {
+                    const oldFileName = talentToUpdate.identityCard.split('/').pop();
+                    const oldFile = bucket.file(`uploads/${talentToUpdate.talentName.replace(/\s+/g, '_')}/identityCard-${oldFileName}`);
+                    await oldFile.delete();
+                }
+
+                // Upload the new image
+                const formattedTalentName = req.body.talentName.replace(/\s+/g, '_');
                 const blob = bucket.file(`uploads/${formattedTalentName}/identityCard-${Date.now()}-${req.file.originalname}`);
                 const blobStream = blob.createWriteStream({
                     metadata: { contentType: req.file.mimetype },
@@ -133,23 +178,21 @@ const updateTalentById = async (req, res) => {
                 });
 
                 await blob.makePublic();
-                identityCardUrl = `https://storage.googleapis.com/${bucketName}/${blob.name}`;
-                otherDetails.identityCard = identityCardUrl;
+                const identityCardUrl = `https://storage.googleapis.com/${bucketName}/${blob.name}`;
+                req.body.identityCard = identityCardUrl;
             }
 
-            if (password) {
-                otherDetails.password = await bcrypt.hash(password, 10);
+            // Update talent's details
+            const updatedData = { ...req.body };
+            if (req.body.password) {
+                updatedData.password = await bcrypt.hash(req.body.password, 10);
             }
 
-            const updated = await Talent.update(otherDetails, { where: { talentId: id } });
+            await talentToUpdate.update(updatedData);
 
-            if (updated[0] > 0) {
-                res.status(200).json({ message: 'Talent updated successfully' });
-            } else {
-                res.status(404).json({ message: 'Talent not found' });
-            }
+            return res.status(200).json({ message: 'Talent updated successfully' });
         } catch (error) {
-            res.status(500).json({ error: 'Error updating talent', details: error.message });
+            return res.status(500).json({ error: 'Error updating talent', details: error.message });
         }
     });
 };

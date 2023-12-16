@@ -1,23 +1,27 @@
 const jwt = require('jsonwebtoken');
 const config = require('../config/config');
-const Admin = require('../models/adminModel');
 
+// eslint-disable-next-line consistent-return
 const isAdmin = async (req, res, next) => {
-    try {
-        const token = req.headers.authorization.split(' ')[1];
-        const decoded = jwt.verify(token, config.accessTokenSecret);
+    const token = req.headers.authorization?.split(' ')[1];
 
-        const admin = await Admin.findByPk(decoded.adminId);
+    if (!token) {
+        return res.status(401).json({ message: 'Access token is missing' });
+    }
 
-        if (!admin) {
-            return res.status(403).json({ message: 'Access denied' });
+    // eslint-disable-next-line consistent-return
+    jwt.verify(token, config.accessTokenSecret, (err, decoded) => {
+        if (err) {
+            return res.status(403).json({ message: 'Invalid token' });
         }
 
-        req.admin = admin;
-        return next();
-    } catch (error) {
-        return res.status(401).json({ message: 'Invalid or expired token' });
-    }
+        if (!decoded.isAdmin) {
+            return res.status(403).json({ message: 'Access denied. Admins only.' });
+        }
+
+        req.adminId = decoded.adminId;
+        next();
+    });
 };
 
 module.exports = isAdmin;

@@ -51,11 +51,14 @@ const loginAdmin = async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // IF SUCCES GENERATE JWT TOKEN
-    const token = jwt.sign({ adminId: admin.id }, config.accessTokenSecret, { expiresIn: '1d' });
-    const message = 'Login successful';
+    // Create a token with an additional isAdmin property
+    const token = jwt.sign(
+      { adminId: admin.id, isAdmin: true }, // Adding isAdmin flag
+      config.accessTokenSecret,
+      { expiresIn: '1d' },
+    );
 
-    return res.status(200).json({ token, message });
+    return res.status(200).json({ token, message: 'Login successful' });
   } catch (error) {
     return res.status(500).json({ error: 'Login failed' });
   }
