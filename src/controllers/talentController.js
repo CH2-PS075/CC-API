@@ -4,6 +4,7 @@ const Talent = require('../models/talentModel');
 const User = require('../models/userModel');
 const { storage, bucketName } = require('../config/cloudStorage');
 const uploadPicture = require('../utils/uploadPicture');
+const { Category, detailCategory } = require('../models/categoryModel');
 
 const bucket = storage.bucket(bucketName);
 
@@ -57,8 +58,24 @@ const addTalent = async (req, res) => {
 
 const getAllTalents = async (req, res) => {
     try {
-        const talents = await Talent.findAll();
-        res.status(200).json(talents);
+        const talents = await Talent.findAll({
+            include: [
+                {
+                    model: detailCategory,
+                    as: 'detailCategory',
+                    include: [{
+                        model: Category,
+                        as: 'category',
+                    }],
+                },
+            ],
+        });
+
+        if (talents && talents.length > 0) {
+            res.status(200).json(talents);
+        } else {
+            res.status(404).json({ message: 'No talents found' });
+        }
     } catch (error) {
         res.status(500).json({ error: 'Error fetching talents', details: error.message });
     }
@@ -66,7 +83,20 @@ const getAllTalents = async (req, res) => {
 
 const getTalentById = async (req, res) => {
     try {
-        const talent = await Talent.findByPk(req.params.id);
+        const talentId = req.params.id;
+        const talent = await Talent.findByPk(talentId, {
+            include: [
+                {
+                    model: detailCategory,
+                    as: 'detailCategory',
+                    include: [{
+                        model: Category,
+                        as: 'category',
+                    }],
+                },
+            ],
+        });
+
         if (talent) {
             res.status(200).json(talent);
         } else {
@@ -78,24 +108,50 @@ const getTalentById = async (req, res) => {
 };
 
 const updateTalentById = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { password, ...otherDetails } = req.body;
-
-        if (password) {
-            otherDetails.password = await bcrypt.hash(password, 10);
+    // eslint-disable-next-line consistent-return
+    uploadPicture.single('identityCard')(req, res, async (err) => {
+        if (err) {
+            return res.status(400).json({ error: err, details: err.message });
         }
 
-        const updated = await Talent.update(otherDetails, { where: { talentId: id } });
+        try {
+            const { id } = req.params;
+            const { password, talentName, ...otherDetails } = req.body;
 
-        if (updated[0] > 0) {
-            res.status(200).json({ message: 'Talent updated successfully' });
-        } else {
-            res.status(404).json({ message: 'Talent not found' });
+            let identityCardUrl;
+            if (req.file) {
+                const formattedTalentName = talentName.replace(/\s+/g, '_');
+                const blob = bucket.file(`uploads/${formattedTalentName}/identityCard-${Date.now()}-${req.file.originalname}`);
+                const blobStream = blob.createWriteStream({
+                    metadata: { contentType: req.file.mimetype },
+                });
+
+                blobStream.end(req.file.buffer);
+                await new Promise((resolve, reject) => {
+                    blobStream.on('error', reject);
+                    blobStream.on('finish', resolve);
+                });
+
+                await blob.makePublic();
+                identityCardUrl = `https://storage.googleapis.com/${bucketName}/${blob.name}`;
+                otherDetails.identityCard = identityCardUrl;
+            }
+
+            if (password) {
+                otherDetails.password = await bcrypt.hash(password, 10);
+            }
+
+            const updated = await Talent.update(otherDetails, { where: { talentId: id } });
+
+            if (updated[0] > 0) {
+                res.status(200).json({ message: 'Talent updated successfully' });
+            } else {
+                res.status(404).json({ message: 'Talent not found' });
+            }
+        } catch (error) {
+            res.status(500).json({ error: 'Error updating talent', details: error.message });
         }
-    } catch (error) {
-        res.status(500).json({ error: 'Error updating talent', details: error.message });
-    }
+    });
 };
 
 const deleteTalentById = async (req, res) => {
