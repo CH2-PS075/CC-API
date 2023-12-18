@@ -27,7 +27,12 @@ const loginUser = async (req, res) => {
     const message = 'Login successful';
 
     return res.status(200).json({
-      token, message, username: user.username, contact: user.contact, address: user.address,
+      token,
+      message,
+      username: user.username,
+      contact: user.contact,
+      address: user.address,
+      picture: user.picture,
     });
   } catch (error) {
     return res.status(500).json({ error: 'Login failed' });
@@ -75,9 +80,11 @@ const loginTalent = async (req, res) => {
     }
 
     // Check if the talent account is verified
-    if (!talent.isVerified) {
-      return res.status(403).json({ message: 'Account is not verified. Wait admin to verify your account.' });
-    }
+    // if (!talent.isVerified) {
+    //   return res.status(403).json({
+    //     message: 'Account is not verified. Wait admin to verify your account.',
+    //   });
+    // }
 
     const isMatch = await bcrypt.compare(password, talent.password);
     if (!isMatch) {
@@ -91,7 +98,12 @@ const loginTalent = async (req, res) => {
     );
 
     return res.json({
-      token, message: 'Login successful', username: talent.username, contact: talent.contact, address: talent.address,
+      token,
+      message: 'Login successful',
+      username: talent.username,
+      contact: talent.contact,
+      address: talent.address,
+      picture: talent.picture,
     });
   } catch (error) {
     return res.status(500).json({ message: 'Login failed', error: error.message });

@@ -1,6 +1,6 @@
 const { Sequelize } = require('sequelize');
 const dbConnection = require('../config/database');
-const { detailCategory } = require('./categoryModel');
+// const { detailCategory } = require('./categoryModel');
 
 const { DataTypes } = Sequelize;
 
@@ -12,13 +12,13 @@ const Talent = dbConnection.define(
       autoIncrement: true,
       primaryKey: true,
     },
-    detailCategoryId: {
-      type: DataTypes.INTEGER,
-      references: {
-        model: 'tb_detail_categories',
-        key: 'detailCategoryId',
-      },
-    },
+    // detailCategoryId: {
+    //   type: DataTypes.INTEGER,
+    //   references: {
+    //     model: 'tb_detail_categories',
+    //     key: 'detailCategoryId',
+    //   },
+    // },
     talentName: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -29,6 +29,11 @@ const Talent = dbConnection.define(
     },
     address: {
       type: DataTypes.TEXT,
+      allowNull: false,
+    },
+    category: {
+      type: DataTypes.STRING,
+      allowNull: false,
     },
     contact: {
       type: DataTypes.STRING,
@@ -38,12 +43,12 @@ const Talent = dbConnection.define(
       type: DataTypes.FLOAT,
       allowNull: false,
     },
-    identityCard: {
+    identityVerification: {
       type: DataTypes.STRING,
     },
-    paymentConfirmationReceipt: {
-      type: DataTypes.STRING,
-    },
+    // // paymentConfirmationReceipt: {
+    // //   type: DataTypes.STRING,
+    // // },
     email: {
       type: DataTypes.STRING,
       unique: true,
@@ -54,10 +59,10 @@ const Talent = dbConnection.define(
     password: {
       type: DataTypes.STRING,
     },
-    isVerified: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: 0,
-    },
+    // isVerified: {
+    //   type: DataTypes.BOOLEAN,
+    //   defaultValue: 0,
+    // },
     picture: {
       type: DataTypes.STRING,
     },
@@ -84,16 +89,16 @@ const Talent = dbConnection.define(
   },
 );
 
-detailCategory.hasMany(Talent, {
-  foreignKey: 'detailCategoryId',
-  as: 'talents',
-  onUpdate: 'SET NULL',
-  onDelete: 'SET NULL',
-});
-Talent.belongsTo(detailCategory, {
-  foreignKey: 'detailCategoryId',
-  as: 'detailCategory',
-});
+// detailCategory.hasMany(Talent, {
+//   foreignKey: 'detailCategoryId',
+//   as: 'talents',
+//   onUpdate: 'SET NULL',
+//   onDelete: 'SET NULL',
+// });
+// Talent.belongsTo(detailCategory, {
+//   foreignKey: 'detailCategoryId',
+//   as: 'detailCategory',
+// });
 
 module.exports = Talent;
 

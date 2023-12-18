@@ -125,6 +125,7 @@ const deleteUserById = async (req, res) => {
   }
 };
 
+// GET FAVORITE TALENTS
 const getFavoriteTalentsForUser = async (req, res) => {
   try {
     const { userId } = req.params;
