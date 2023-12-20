@@ -46,7 +46,7 @@ const addTalent = async (req, res) => {
                 formData.append('image', req.file.buffer, req.file.originalname);
 
                 // Send POST request to the prediction API
-                const predictionResponse = await axios.post(`${config.mlURL}/prediction`, formData, {
+                const predictionResponse = await axios.post(`${config.faceValidateUrl}/prediction`, formData, {
                     headers: {
                         ...formData.getHeaders(),
                     },

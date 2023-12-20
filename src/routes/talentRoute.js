@@ -12,8 +12,8 @@ const { authenticateToken } = require('../middlewares/authMiddleware');
 
 const router = express.Router();
 
-router.post('/', addTalent);
 router.get('/search', searchTalents);
+router.post('/', addTalent);
 router.get('/', getAllTalents);
 router.get('/:id', authenticateToken, getTalentById);
 router.put('/:id', authenticateToken, updateTalentById);
