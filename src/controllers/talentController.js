@@ -1,4 +1,7 @@
+/* eslint-disable import/no-extraneous-dependencies */
 const bcrypt = require('bcrypt');
+const axios = require('axios');
+const FormData = require('form-data');
 const { Op } = require('sequelize');
 const Talent = require('../models/talentModel');
 const User = require('../models/userModel');
@@ -11,7 +14,6 @@ const bucket = storage.bucket(bucketName);
 
 // ADD TALENT
 const addTalent = async (req, res) => {
-    // Change to handle picture upload
     uploadPicture.single('picture')(req, res, async (err) => {
         if (err) {
             return res.status(400).json({ error: err, details: err.message });
@@ -28,58 +30,73 @@ const addTalent = async (req, res) => {
                     { email: req.body.email },
             });
             const existingTalentByEmail = await Talent.findOne({
-                where:
-                    { email: req.body.email },
+                where: {
+                    email: req.body.email,
+                },
             });
 
             if (existingUserByEmail || existingAdminByEmail || existingTalentByEmail) {
                 return res.status(409).send({ message: 'Email already in use' });
             }
 
-            // Hash the password
-            const hashedPassword = await bcrypt.hash(req.body.password, 10);
-            const formattedTalentName = req.body.talentName.replace(/\s+/g, '_');
-
-            // Handle picture upload
-            let pictureUrl = req.body.picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(req.body.talentName)}`;
             if (req.file) {
-                const blob = bucket.file(`uploads/${formattedTalentName}/picture/${Date.now()}-${req.file.originalname}`);
-                const blobStream = blob.createWriteStream({
-                    metadata:
-                        { contentType: req.file.mimetype },
+                // Create form-data for the image
+                const formData = new FormData();
+                formData.append('image', req.file.buffer, req.file.originalname);
+
+                // Send POST request to the prediction API
+                const predictionResponse = await axios.post('https://model-ecarh7oqpa-ew.a.run.app/prediction', formData, {
+                    headers: {
+                        ...formData.getHeaders(),
+                    },
                 });
 
-                blobStream.end(req.file.buffer);
-                await new Promise((resolve, reject) => {
-                    blobStream.on('error', reject);
-                    blobStream.on('finish', resolve);
-                });
+                // Check the prediction response
+                if (predictionResponse.data.data.soil_types_prediction === 'Valid Face') {
+                    // Hash the password
+                    const hashedPassword = await bcrypt.hash(req.body.password, 10);
 
-                await blob.makePublic();
-                pictureUrl = `https://storage.googleapis.com/${bucketName}/${blob.name}`;
+                    // Save the picture to Google Cloud Storage
+                    const formattedTalentName = req.body.talentName.replace(/\s+/g, '_');
+                    const blob = bucket.file(`uploads/talents/${formattedTalentName}/picture/${Date.now()}-${req.file.originalname}`);
+                    const blobStream = blob.createWriteStream({
+                        metadata:
+                            { contentType: req.file.mimetype },
+                    });
+
+                    blobStream.end(req.file.buffer);
+                    await new Promise((resolve, reject) => {
+                        blobStream.on('error', reject);
+                        blobStream.on('finish', resolve);
+                    });
+
+                    await blob.makePublic();
+                    const pictureUrl = `https://storage.googleapis.com/${bucketName}/${blob.name}`;
+
+                    // Create new talent
+                    const newTalent = await Talent.create({
+                        talentName: req.body.talentName,
+                        category: req.body.category,
+                        quantity: req.body.quantity,
+                        address: req.body.address,
+                        contact: req.body.contact,
+                        price: req.body.price,
+                        email: req.body.email,
+                        password: hashedPassword,
+                        picture: pictureUrl,
+                        portfolio: req.body.portfolio,
+                        latitude: req.body.latitude,
+                        longitude: req.body.longitude,
+                    });
+
+                    return res.status(201).json({ message: 'Talent registered successfully', talentId: newTalent.talentId });
+                }
+                // Prediction is not 'Valid Face'
+                return res.status(400).json({ message: 'Invalid picture, unable to register talent' });
             }
-
-            // Create new talent
-            const newTalent = await Talent.create({
-                talentName: req.body.talentName,
-                category: req.body.category,
-                quantity: req.body.quantity,
-                address: req.body.address,
-                contact: req.body.contact,
-                price: req.body.price,
-                email: req.body.email,
-                password: hashedPassword,
-                // isVerified: true,
-                picture: pictureUrl,
-                portfolio: req.body.portfolio,
-                latitude: req.body.latitude,
-                longitude: req.body.longitude,
-                // paymentConfirmationReceipt: req.body.paymentConfirmationReceipt,
-            });
-
-            return res.status(201).json({ message: 'Talent registered successfully', talentId: newTalent.talentId });
+            return res.status(400).json({ message: 'No picture provided' });
         } catch (error) {
-            return res.status(400).json({ error: 'Registration failed', details: error.message });
+            return res.status(500).json({ error: 'Error in registration', details: error.message });
         }
     });
 };
@@ -106,7 +123,9 @@ const getAllTalents = async (req, res) => {
             res.status(404).json({ message: 'No talents found' });
         }
     } catch (error) {
-        res.status(500).json({ error: 'Error fetching talents', details: error.message });
+        res
+            .status(500)
+            .json({ error: 'Error fetching talents', details: error.message });
     }
 };
 
@@ -136,7 +155,9 @@ const getTalentById = async (req, res) => {
             res.status(404).json({ message: 'Talent not found' });
         }
     } catch (error) {
-        res.status(500).json({ error: 'Error fetching talent', details: error.message });
+        res
+            .status(500)
+            .json({ error: 'Error fetching talent', details: error.message });
     }
 };
 
@@ -172,7 +193,10 @@ const updateTalentById = async (req, res) => {
             // Update the picture if a new file is provided
             if (req.file) {
                 const formattedTalentName = req.body.talentName.replace(/\s+/g, '_');
-                const blob = bucket.file(`uploads/${formattedTalentName}/picture/${Date.now()}-${req.file.originalname}`);
+                const blob = bucket.file(
+                    `uploads/talents/${formattedTalentName}/picture/${Date.now()}-${req.file.originalname
+                    }`,
+                );
                 const blobStream = blob.createWriteStream({
                     metadata: { contentType: req.file.mimetype },
                 });
@@ -190,9 +214,16 @@ const updateTalentById = async (req, res) => {
             // Update talent information
             await talent.update(updates);
 
-            return res.status(200).json({ message: 'Talent updated successfully', talentId: talent.talentId });
+            return res
+                .status(200)
+                .json({
+                    message: 'Talent updated successfully',
+                    talentId: talent.talentId,
+                });
         } catch (error) {
-            return res.status(500).json({ error: 'Error updating talent', details: error.message });
+            return res
+                .status(500)
+                .json({ error: 'Error updating talent', details: error.message });
         }
     });
 };
@@ -209,7 +240,9 @@ const deleteTalentById = async (req, res) => {
             res.status(404).json({ message: 'Talent not found' });
         }
     } catch (error) {
-        res.status(500).json({ error: 'Error deleting talent', details: error.message });
+        res
+            .status(500)
+            .json({ error: 'Error deleting talent', details: error.message });
     }
 };
 
