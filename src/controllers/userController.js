@@ -1,9 +1,11 @@
 const bcrypt = require('bcrypt');
+const axios = require('axios');
 const User = require('../models/userModel');
 const Admin = require('../models/adminModel');
 const Talent = require('../models/talentModel');
 const uploadPicture = require('../utils/uploadPicture');
 const { storage, bucketName } = require('../config/cloudStorage');
+const config = require('../config/config');
 
 const bucket = storage.bucket(bucketName);
 
@@ -214,6 +216,24 @@ const getFavoriteTalentsForUser = async (req, res) => {
   }
 };
 
+const sendMessage = async (req, res) => {
+  try {
+    const { text } = req.body; // Extract text from the request body
+
+    // Prepare the payload
+    const payload = { text };
+
+    // Make a POST request to the external API
+    const response = await axios.post(`${config.chatBotUrl}/prediction`, payload);
+
+    // Send back the response from the external API
+    res.status(200).json(response.data);
+  } catch (error) {
+    // Handle any errors that occur during the API call
+    res.status(500).json({ error: 'Error in processing the request', details: error.message });
+  }
+};
+
 module.exports = {
   addUser,
   getAllUsers,
@@ -221,4 +241,5 @@ module.exports = {
   updateUserById,
   deleteUserById,
   getFavoriteTalentsForUser,
+  sendMessage,
 };

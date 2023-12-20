@@ -9,7 +9,8 @@ const config = {
   accessTokenSecret: process.env.ACCESS_TOKEN_SECRET,
   projectIdGCP: process.env.PROJECT_ID_GCP,
   bucketName: process.env.BUCKET_NAME,
-  mlURL: process.env.ML_URL,
+  faceValidateUrl: process.env.FACEVALIDATE_URL,
+  chatBotUrl: process.env.CHATBOT_URL,
 };
 
 module.exports = config;
