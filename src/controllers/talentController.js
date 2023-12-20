@@ -9,6 +9,7 @@ const { storage, bucketName } = require('../config/cloudStorage');
 const uploadPicture = require('../utils/uploadPicture');
 // const { Category, detailCategory } = require('../models/categoryModel');
 const Admin = require('../models/adminModel');
+const config = require('../config/config');
 
 const bucket = storage.bucket(bucketName);
 
@@ -45,7 +46,7 @@ const addTalent = async (req, res) => {
                 formData.append('image', req.file.buffer, req.file.originalname);
 
                 // Send POST request to the prediction API
-                const predictionResponse = await axios.post('https://model-ecarh7oqpa-ew.a.run.app/prediction', formData, {
+                const predictionResponse = await axios.post(`${config.mlURL}/prediction`, formData, {
                     headers: {
                         ...formData.getHeaders(),
                     },
