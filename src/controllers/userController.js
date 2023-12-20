@@ -2,43 +2,99 @@ const bcrypt = require('bcrypt');
 const User = require('../models/userModel');
 const Admin = require('../models/adminModel');
 const Talent = require('../models/talentModel');
+const uploadPicture = require('../utils/uploadPicture');
+const { storage, bucketName } = require('../config/cloudStorage');
+
+const bucket = storage.bucket(bucketName);
 
 // CREATE NEW USER
 const addUser = async (req, res) => {
-  try {
-    const existingUserByEmail = await User.findOne({ where: { email: req.body.email } });
-    const existingAdminByEmail = await Admin.findOne({ where: { email: req.body.email } });
-    const existingTalentByEmail = await Talent.findOne({ where: { email: req.body.email } });
-
-    if (existingUserByEmail || existingAdminByEmail || existingTalentByEmail) {
-      return res.status(409).send({ message: 'Email already in use' });
+  uploadPicture.single('picture')(req, res, async (err) => {
+    if (err) {
+      return res.status(400).json({ error: err, details: err.message });
     }
 
-    const existingUserByUsername = await User.findOne({ where: { username: req.body.username } });
-    const existingAdminByUsername = await Admin.findOne({ where: { username: req.body.username } });
+    try {
+      // Check for existing email and username
+      const existingUserByEmail = await User.findOne({
+        where: { email: req.body.email },
+      });
+      const existingAdminByEmail = await Admin.findOne({
+        where: { email: req.body.email },
+      });
+      const existingTalentByEmail = await Talent.findOne({
+        where: { email: req.body.email },
+      });
+      const existingUserByUsername = await User.findOne({
+        where: { username: req.body.username },
+      });
+      const existingAdminByUsername = await Admin.findOne({
+        where: { username: req.body.username },
+      });
 
-    if (existingUserByUsername || existingAdminByUsername) {
-      return res.status(409).send({ message: 'Username already in use' });
+      if (
+        existingUserByEmail
+        || existingAdminByEmail
+        || existingTalentByEmail
+      ) {
+        return res.status(409).send({ message: 'Email already in use' });
+      }
+
+      if (existingUserByUsername || existingAdminByUsername) {
+        return res.status(409).send({ message: 'Username already in use' });
+      }
+
+      if (!req.body.email || !req.body.username || !req.body.password) {
+        return res.status(400).send({ message: 'Missing required fields' });
+      }
+
+      // Hash the password
+      const hashedPassword = await bcrypt.hash(req.body.password, 10);
+
+      // Handle picture upload
+      let pictureUrl = req.body.picture
+        || `https://ui-avatars.com/api/?name=${encodeURIComponent(
+          req.body.fullName,
+        )}`;
+      if (req.file) {
+        const formattedUsername = req.body.username.replace(/\s+/g, '_');
+        const blob = bucket.file(
+          `uploads/users/${formattedUsername}/picture/${Date.now()}-${req.file.originalname
+          }`,
+        );
+        const blobStream = blob.createWriteStream({
+          metadata: { contentType: req.file.mimetype },
+        });
+
+        blobStream.end(req.file.buffer);
+        await new Promise((resolve, reject) => {
+          blobStream.on('error', reject);
+          blobStream.on('finish', resolve);
+        });
+
+        await blob.makePublic();
+        pictureUrl = `https://storage.googleapis.com/${bucketName}/${blob.name}`;
+      }
+
+      // Create new user
+      const newUser = {
+        username: req.body.username,
+        fullName: req.body.fullName,
+        address: req.body.address,
+        contact: req.body.contact,
+        email: req.body.email,
+        password: hashedPassword,
+        picture: pictureUrl,
+      };
+
+      await User.create(newUser);
+      return res.status(201).send({ message: 'User registered successfully' });
+    } catch (error) {
+      return res
+        .status(400)
+        .send({ error: 'Registration failed', details: error.message });
     }
-
-    const hashedPassword = await bcrypt.hash(req.body.password, 10);
-    const pictureUrl = req.body.picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(req.body.fullName)}`;
-
-    const newUser = {
-      username: req.body.username,
-      fullName: req.body.fullName,
-      address: req.body.address,
-      contact: req.body.contact,
-      email: req.body.email,
-      password: hashedPassword,
-      picture: pictureUrl,
-    };
-
-    await User.create(newUser);
-    return res.status(201).send({ message: 'User registered successfully' });
-  } catch (error) {
-    return res.status(400).send({ error: 'Registration failed', details: error.message });
-  }
+  });
 };
 
 // GET ALL REGISTERED USER
@@ -66,47 +122,60 @@ const getUserById = async (req, res) => {
 };
 
 // UPDATE USER BY ID
-// eslint-disable-next-line consistent-return
 const updateUserById = async (req, res) => {
-  try {
-    const userId = req.params.id;
-    const userToUpdate = await User.findByPk(userId);
-
-    const existingUserByEmail = await User.findOne({ where: { email: req.body.email } });
-    const existingAdminByEmail = await Admin.findOne({ where: { email: req.body.email } });
-    const existingTalentByEmail = await Talent.findOne({ where: { email: req.body.email } });
-
-    if (existingUserByEmail || existingAdminByEmail || existingTalentByEmail) {
-      return res.status(409).send({ message: 'Email already in use' });
+  // eslint-disable-next-line consistent-return
+  uploadPicture.single('picture')(req, res, async (err) => {
+    if (err) {
+      return res.status(400).json({ error: err, details: err.message });
     }
 
-    const existingUserByUsername = await User.findOne({ where: { username: req.body.username } });
-    const existingAdminByUsername = await Admin.findOne({ where: { username: req.body.username } });
+    try {
+      const userId = req.params.id;
+      const userToUpdate = await User.findByPk(userId);
 
-    if (existingUserByUsername || existingAdminByUsername) {
-      return res.status(409).send({ message: 'Username already in use' });
+      if (!userToUpdate) {
+        return res.status(404).send({ message: 'User not found' });
+      }
+
+      // Check for existing email and username
+      // ... existing checks ...
+
+      // Prepare updated data, excluding email and password
+      const updatedData = {
+        username: req.body.username || userToUpdate.username,
+        fullName: req.body.fullName || userToUpdate.fullName,
+        address: req.body.address || userToUpdate.address,
+        contact: req.body.contact || userToUpdate.contact,
+      };
+
+      // Update the picture if a new file is provided
+      if (req.file) {
+        const formattedUsername = req.body.username.replace(/\s+/g, '_') || userToUpdate.username.replace(/\s+/g, '_');
+        const blob = bucket.file(`uploads/users/${formattedUsername}/picture/${Date.now()}-${req.file.originalname}`);
+        const blobStream = blob.createWriteStream({
+          metadata: { contentType: req.file.mimetype },
+        });
+
+        blobStream.end(req.file.buffer);
+        await new Promise((resolve, reject) => {
+          blobStream.on('error', reject);
+          blobStream.on('finish', resolve);
+        });
+
+        await blob.makePublic();
+        updatedData.picture = `https://storage.googleapis.com/${bucketName}/${blob.name}`;
+      } else {
+        updatedData.picture = req.body.picture || userToUpdate.picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(userToUpdate.fullName)}`;
+      }
+
+      // Update the user with the new data
+      await userToUpdate.update(updatedData);
+
+      res.status(200).send({ message: 'User updated successfully' });
+    } catch (error) {
+      res.status(500).send({ error: 'Update failed', details: error.message });
     }
-
-    if (!userToUpdate) {
-      return res.status(404).send({ message: 'User not found' });
-    }
-
-    // Prepare updated data, excluding email and password
-    const updatedData = {
-      username: req.body.username || userToUpdate.username,
-      fullName: req.body.fullName || userToUpdate.fullName,
-      address: req.body.address || userToUpdate.address,
-      contact: req.body.contact || userToUpdate.contact,
-      picture: req.body.picture || userToUpdate.picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(userToUpdate.fullName)}`,
-    };
-
-    // Update the user with the new data
-    await userToUpdate.update(updatedData);
-
-    res.status(200).send({ message: 'User updated successfully' });
-  } catch (error) {
-    res.status(500).send({ error: 'Update failed', details: error.message });
-  }
+  });
 };
 
 // DELETE USER BY ID
@@ -136,7 +205,12 @@ const getFavoriteTalentsForUser = async (req, res) => {
 
     res.status(200).json(favoredTalents);
   } catch (error) {
-    res.status(500).json({ error: 'Error fetching favored talents', details: error.message });
+    res
+      .status(500)
+      .json({
+        error: 'Error fetching favored talents',
+        details: error.message,
+      });
   }
 };
 
