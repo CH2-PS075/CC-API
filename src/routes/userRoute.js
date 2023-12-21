@@ -15,11 +15,11 @@ const router = express.Router();
 const upload = multer();
 
 router.post('/', addUser);
+router.post('/send-message', upload.none(), sendMessage);
 router.get('/', authenticateToken, getAllUsers);
 router.get('/:id', authenticateToken, getUserById);
 router.put('/:id', authenticateToken, updateUserById);
 router.delete('/:id', authenticateToken, deleteUserById);
 router.get('/:id/favorite-talents', getFavoriteTalentsForUser);
-router.post('/send-message', upload.none(), authenticateToken, sendMessage);
 
 module.exports = router;

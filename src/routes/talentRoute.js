@@ -1,4 +1,5 @@
 const express = require('express');
+const multer = require('multer');
 const {
     addTalent,
     getAllTalents,
@@ -7,11 +8,14 @@ const {
     deleteTalentById,
     addTalentToFavorites,
     searchTalents,
+    sendPredictionRequest,
 } = require('../controllers/talentController');
 const { authenticateToken } = require('../middlewares/authMiddleware');
 
 const router = express.Router();
+const upload = multer();
 
+router.post('/recommendation', upload.none(), sendPredictionRequest);
 router.get('/search', searchTalents);
 router.post('/', addTalent);
 router.get('/', getAllTalents);

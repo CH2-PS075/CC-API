@@ -11,6 +11,7 @@ const config = {
   bucketName: process.env.BUCKET_NAME,
   faceValidateUrl: process.env.FACEVALIDATE_URL,
   chatBotUrl: process.env.CHATBOT_URL,
+  recommendUrl: process.env.RECOMMEND_URL,
 };
 
 module.exports = config;
