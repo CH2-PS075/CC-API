@@ -289,6 +289,28 @@ const searchTalents = async (req, res) => {
     }
 };
 
+const sendPredictionRequest = async (req, res) => {
+    try {
+        const {
+            latitude, longitude, price, category, quantity,
+        } = req.body;
+
+        const jsonPayload = {
+            latitude,
+            longitude,
+            price,
+            category,
+            quantity,
+        };
+
+        const response = await axios.post(`${config.recommendUrl}/prediction`, jsonPayload);
+
+        res.status(200).json(response.data);
+    } catch (error) {
+        res.status(500).json({ error: 'Error in processing the prediction request', details: error.message });
+    }
+};
+
 module.exports = {
     addTalent,
     getAllTalents,
@@ -297,4 +319,5 @@ module.exports = {
     deleteTalentById,
     addTalentToFavorites,
     searchTalents,
+    sendPredictionRequest,
 };
