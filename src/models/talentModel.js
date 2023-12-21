@@ -27,6 +27,10 @@ const Talent = dbConnection.define(
       type: DataTypes.ENUM('single', 'duo', 'group'),
       allowNull: false,
     },
+    description: {
+      type: DataTypes.TEXT,
+      allowNull: false,
+    },
     address: {
       type: DataTypes.TEXT,
       allowNull: false,
@@ -51,6 +55,7 @@ const Talent = dbConnection.define(
     // // },
     email: {
       type: DataTypes.STRING,
+      allowNull: false,
       unique: true,
       validate: {
         isEmail: true,
@@ -58,6 +63,7 @@ const Talent = dbConnection.define(
     },
     password: {
       type: DataTypes.STRING,
+      allowNull: false,
     },
     // isVerified: {
     //   type: DataTypes.BOOLEAN,
