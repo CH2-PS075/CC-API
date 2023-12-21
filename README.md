@@ -39,7 +39,8 @@ This project is built using Express.js, a fast, unopinionated, minimalist web fr
    ACCESS_TOKEN_SECRET=yourtoken
    PROJECT_ID_GCP=yourprojectid
    BUCKET_NAME=yourbucketname
-   ML_URL=https://yourmlurl.com/
+   FACEVALIDATE_URL=https://example.com
+   CHATBOT_URL=https://example.com
    ```
 
 3. Add your **credentials.json** or key of Service Account from your Google Cloud Platform in the project root `CC-API/credentials.json`
