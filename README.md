@@ -41,6 +41,7 @@ This project is built using Express.js, a fast, unopinionated, minimalist web fr
    BUCKET_NAME=yourbucketname
    FACEVALIDATE_URL=https://example.com
    CHATBOT_URL=https://example.com
+   RECOMMEND_URL=https://example.com
    ```
 
 3. Add your **credentials.json** or key of Service Account from your Google Cloud Platform in the project root `CC-API/credentials.json`
