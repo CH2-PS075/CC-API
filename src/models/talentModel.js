@@ -70,7 +70,7 @@ const Talent = dbConnection.define(
     //   defaultValue: 0,
     // },
     picture: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
     },
     portfolio: {
       type: DataTypes.TEXT,
